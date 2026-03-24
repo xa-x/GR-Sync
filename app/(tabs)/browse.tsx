@@ -8,26 +8,32 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
-import { useCamera } from "@/hooks/useCamera";
+import { useCameraContext } from "@/context/CameraContext";
 import { MediaItem } from "@/types";
 
-export default function LibraryScreen() {
+export default function BrowseScreen() {
   const router = useRouter();
-  const { library, loading, error, loadLibrary } = useCamera();
+  const {
+    connection,
+    library,
+    loading,
+    error,
+    loadLibrary,
+    setImportQueue,
+  } = useCameraContext();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadLibrary();
-  }, []);
+    if (connection.isConnected && library.length === 0) {
+      loadLibrary();
+    }
+  }, [connection.isConnected]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -41,12 +47,14 @@ export default function LibraryScreen() {
   }, [library, selected.size]);
 
   const handleImport = () => {
-    const selectedItems = library.filter((item) => selected.has(item.id));
-    // Pass selected items to import screen
-    router.push({
-      pathname: "/import",
-      params: { items: JSON.stringify(selectedItems) },
-    });
+    const items = library.filter((item) => selected.has(item.id));
+    setImportQueue(items);
+    router.push("/(tabs)/import");
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes > 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
+    return `${(bytes / 1_000).toFixed(0)} KB`;
   };
 
   const renderItem = useCallback(
@@ -58,9 +66,9 @@ export default function LibraryScreen() {
         <View className="relative">
           <Image
             source={{ uri: item.thumbnailUrl }}
-            className="w-[calc(33%-4px)] aspect-square rounded-lg"
             style={{ width: 120, height: 120 }}
             contentFit="cover"
+            className="rounded-lg"
           />
           {selected.has(item.id) && (
             <View className="absolute inset-0 bg-blue-500/40 rounded-lg" />
@@ -80,6 +88,22 @@ export default function LibraryScreen() {
     ),
     [selected, toggleSelect]
   );
+
+  if (!connection.isConnected) {
+    return (
+      <View className="flex-1 bg-black items-center justify-center px-6">
+        <View className="w-16 h-16 rounded-2xl bg-white/10 items-center justify-center mb-4">
+          <Text className="text-2xl">📡</Text>
+        </View>
+        <Text className="text-white text-lg font-medium mb-2">
+          Not Connected
+        </Text>
+        <Text className="text-white/50 text-center text-sm">
+          Connect to your Ricoh GR camera first
+        </Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -106,7 +130,6 @@ export default function LibraryScreen() {
 
   return (
     <View className="flex-1 bg-black">
-      {/* Header Actions */}
       <View className="flex-row justify-between items-center px-4 py-3 border-b border-white/10">
         <TouchableOpacity onPress={selectAll}>
           <Text className="text-white/70 text-sm">
@@ -114,23 +137,21 @@ export default function LibraryScreen() {
           </Text>
         </TouchableOpacity>
         <Text className="text-white/50 text-sm">
-          {selected.size} selected
+          {selected.size} of {library.length} selected
         </Text>
       </View>
 
-      {/* Grid */}
       <FlatList
         data={library}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={3}
-        className="flex-1 px-1"
+        contentContainerStyle={{ paddingHorizontal: 4, paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Bottom Action */}
       {selected.size > 0 && (
-        <View className="p-4 border-t border-white/10">
+        <View className="p-4 border-t border-white/10 bg-black">
           <TouchableOpacity
             onPress={handleImport}
             className="bg-white py-4 rounded-xl"
