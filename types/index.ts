@@ -24,3 +24,10 @@ export interface TransferProgress {
   currentFile: string;
   percentage: number;
 }
+
+export interface WiFiNetwork {
+  ssid: string;
+  bssid: string;
+  strength: number;
+  isRicohGR: boolean;
+}

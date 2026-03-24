@@ -16,7 +16,11 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "GR Sync needs access to save imported photos to your library.",
-        "NSBluetoothAlwaysUsageDescription": "GR Sync uses Bluetooth to connect to your Ricoh GR camera."
+        "NSBluetoothAlwaysUsageDescription": "GR Sync uses Bluetooth to connect to your Ricoh GR camera.",
+        "NSLocalNetworkUsageDescription": "GR Sync needs access to the local network to connect to your Ricoh GR camera."
+      },
+      "entitlements": {
+        "com.apple.developer.networking.wifi-info": true
       }
     },
     "android": {
@@ -30,7 +34,9 @@
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_STATE"
       ]
     },
     "plugins": [
@@ -42,6 +48,18 @@
           "photosPermission": "GR Sync needs access to save imported photos to your library.",
           "savePhotosPermission": "GR Sync needs access to save imported photos to your library.",
           "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "react-native-wifi-reborn",
+        {
+          "fineLocationPermission": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "GR Sync needs location access to scan for WiFi networks."
         }
       ],
       "expo-router"

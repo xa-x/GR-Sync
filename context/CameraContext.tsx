@@ -3,11 +3,10 @@ import {
   useContext,
   useState,
   useCallback,
-  useRef,
   type ReactNode,
 } from "react";
 import { CameraConnection, MediaItem, TransferProgress } from "@/types";
-import { ricohGR } from "@/lib/camera/ricohGR";
+import { ricohGR, WiFiNetwork } from "@/lib/camera/ricohGR";
 import { importService } from "@/lib/transfer/importService";
 
 interface CameraContextType {
@@ -16,8 +15,11 @@ interface CameraContextType {
   loading: boolean;
   error: string | null;
   connect: () => Promise<void>;
+  connectToSSID: (ssid: string, password?: string) => Promise<void>;
   disconnect: () => void;
   loadLibrary: () => Promise<void>;
+  scanForCameras: () => Promise<WiFiNetwork[]>;
+  availableCameras: WiFiNetwork[];
   importQueue: MediaItem[];
   setImportQueue: (items: MediaItem[]) => void;
   importProgress: TransferProgress | null;
@@ -36,6 +38,7 @@ export function CameraProvider({ children }: { children: ReactNode }) {
   const [library, setLibrary] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [availableCameras, setAvailableCameras] = useState<WiFiNetwork[]>([]);
 
   // Import state
   const [importQueue, setImportQueue] = useState<MediaItem[]>([]);
@@ -43,14 +46,59 @@ export function CameraProvider({ children }: { children: ReactNode }) {
   const [importState, setImportState] = useState<"idle" | "importing" | "done" | "error">("idle");
   const [importError, setImportError] = useState<string | null>(null);
 
+  const scanForCameras = useCallback(async (): Promise<WiFiNetwork[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const cameras = await ricohGR.scanForCameras();
+      setAvailableCameras(cameras);
+      return cameras;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to scan for cameras";
+      setError(msg);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const connect = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const conn = await ricohGR.connect();
+      // First scan for cameras
+      const cameras = await ricohGR.scanForCameras();
+      setAvailableCameras(cameras);
+
+      if (cameras.length === 0) {
+        setError("No Ricoh GR cameras found. Make sure your camera's WiFi is enabled.");
+        return;
+      }
+
+      // Auto-connect to first camera found
+      const firstCamera = cameras[0];
+      const conn = await ricohGR.connectToCamera(firstCamera.ssid);
       setConnection(conn);
+
       if (!conn.isConnected) {
-        setError("Could not connect to camera. Make sure WiFi is enabled.");
+        setError("Could not connect to camera. Try selecting manually.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Connection failed");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const connectToSSID = useCallback(async (ssid: string, password?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const conn = await ricohGR.connectToCamera(ssid, password);
+      setConnection(conn);
+
+      if (!conn.isConnected) {
+        setError("Could not connect to camera.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Connection failed");
@@ -67,6 +115,7 @@ export function CameraProvider({ children }: { children: ReactNode }) {
     setImportState("idle");
     setImportProgress(null);
     setImportError(null);
+    setAvailableCameras([]);
   }, []);
 
   const loadLibrary = useCallback(async () => {
@@ -126,8 +175,11 @@ export function CameraProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         connect,
+        connectToSSID,
         disconnect,
         loadLibrary,
+        scanForCameras,
+        availableCameras,
         importQueue,
         setImportQueue,
         importProgress,

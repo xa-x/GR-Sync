@@ -4,35 +4,58 @@ Sync photos and videos from your Ricoh GR camera to your phone.
 
 ## Features
 
-- 📷 Connect via WiFi or Bluetooth
-- 🖼️ Browse camera library with thumbnails
-- ⬇️ Select and import multiple items
-- 🎬 Supports both images and videos
-- 🌙 Clean, minimal dark UI
+- 📶 **WiFi Scanning** - Automatically detect nearby Ricoh GR cameras
+- 📷 **Easy Connection** - One-tap connect to your camera
+- 🖼️ **Browse Library** - Preview thumbnails before importing
+- ⬇️ **Batch Import** - Select multiple items and import at once
+- 🎬 **Videos Too** - Supports both photos and videos
+- 🌙 **Clean Dark UI** - Minimal, native-feeling interface
 
 ## Tech Stack
 
 - **Expo** (React Native) + Expo Router
 - **TypeScript**
-- **NativeWind** (Tailwind CSS for React Native)
+- **Uniwind** (Tailwind CSS for React Native)
 - **expo-image** for fast image loading
 - **expo-video** for video playback
+- **react-native-wifi-reborn** for WiFi camera detection
 - **expo-media-library** for saving to device
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18+
+- Expo CLI
+- iOS device (for testing) or Android device
+- Ricoh GR camera with WiFi enabled
+
+### Installation
+
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Start development server
-npm start
+bun start
 
 # Run on iOS
-npm run ios
+bun run ios
 
 # Run on Android
-npm run android
+bun run android
+```
+
+### Development Build
+
+This app requires a development build (not Expo Go) due to native WiFi modules.
+
+```bash
+# Install expo-dev-client
+bun add expo-dev-client
+
+# Create development build
+eas build --profile development --platform ios
 ```
 
 ## Project Structure
@@ -40,51 +63,60 @@ npm run android
 ```
 gr-sync/
 ├── app/                    # Expo Router screens
+│   ├── (tabs)/
+│   │   ├── _layout.tsx    # Native tab bar
+│   │   ├── index.tsx      # Connect screen
+│   │   ├── browse.tsx     # Camera library
+│   │   └── import.tsx     # Import progress
 │   ├── _layout.tsx        # Root layout
-│   ├── index.tsx          # Connect screen
-│   ├── library.tsx        # Browse camera library
-│   ├── import.tsx         # Import progress
 │   └── settings.tsx       # Settings
-├── components/            # Reusable UI components
-├── hooks/
-│   └── useCamera.ts       # Camera connection hook
+├── components/            # Reusable components
+├── context/
+│   └── CameraContext.tsx  # Global state
 ├── lib/
 │   ├── camera/
-│   │   └── ricohGR.ts     # Ricoh GR connection logic
+│   │   └── ricohGR.ts     # Ricoh GR service
+│   ├── wifi/
+│   │   └── service.ts     # WiFi scanning/connection
 │   └── transfer/
-│       └── importService.ts # Media import logic
+│       └── importService.ts # Media import
 └── types/
     └── index.ts           # TypeScript types
 ```
 
-## Ricoh GR Connection
+## How It Works
 
-The app connects to Ricoh GR cameras using:
+1. **Scan** - App scans for WiFi networks with "RICOH GR" in the name
+2. **Connect** - Select your camera to connect via WiFi
+3. **Browse** - View thumbnails from camera's library
+4. **Import** - Select items and save to your phone
 
-1. **WiFi (preferred)** - Camera creates a hotspot at `192.168.0.1`
-2. **Bluetooth** - Fallback for devices without WiFi
-
-### How to Connect
+## Ricoh GR Setup
 
 1. Enable WiFi on your Ricoh GR camera
-2. Connect your phone to the camera's WiFi network
-3. Open GR Sync and tap "Connect"
-4. Browse and import your photos
+2. Go to camera's WiFi settings
+3. Select "Send to Smartphone" mode
+4. Camera creates a WiFi hotspot (e.g., "GR III")
+5. Open GR Sync and connect
+
+## Permissions
+
+- **Location** - Required for WiFi scanning (Android)
+- **Photos** - Required to save imported media
+- **Local Network** - Required for camera communication (iOS)
 
 ## Development Status
 
-- [x] Project scaffold
-- [x] UI screens (Connect, Library, Import, Settings)
-- [x] Camera connection logic (WiFi)
-- [x] Import service
-- [ ] Real Ricoh GR API integration (needs testing with real camera)
-- [ ] Bluetooth connection
+- [x] WiFi scanning for cameras
+- [x] Camera connection flow
+- [x] Browse library UI
+- [x] Import with progress
+- [x] Native tab navigation
+- [ ] Real Ricoh GR API integration
+- [ ] Bluetooth fallback
 - [ ] Settings persistence
+- [ ] Background transfers
 
-## Notes
+## License
 
-The app currently uses mock data for UI development. To integrate with a real Ricoh GR camera, you'll need to:
-
-1. Reverse-engineer or find documentation for the Ricoh GR HTTP API
-2. Update `lib/camera/ricohGR.ts` with actual endpoints
-3. Test connection and file transfer with a real camera
+MIT

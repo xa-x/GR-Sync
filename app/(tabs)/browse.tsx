@@ -65,7 +65,7 @@ export default function BrowseScreen() {
       >
         <View className="relative">
           <Image
-            source={{ uri: item.thumbnailUrl }}
+            source={{ uri: item.thumbnailUrl || item.fullUrl }}
             style={{ width: 120, height: 120 }}
             contentFit="cover"
             className="rounded-lg"

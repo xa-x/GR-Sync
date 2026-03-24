@@ -1,7 +1,15 @@
 import { CameraConnection, MediaItem } from "@/types";
+import {
+  getCurrentSSID,
+  scanForRicohCameras,
+  connectToCamera,
+  disconnectFromCamera,
+  WiFiNetwork,
+} from "../wifi/service";
 
 const RICOH_DEFAULT_IP = "192.168.0.1";
-const RICOH_SSID_PREFIX = "RICOH GR";
+
+export type { WiFiNetwork };
 
 class RicohGRService {
   private connection: CameraConnection = {
@@ -10,7 +18,38 @@ class RicohGRService {
     cameraName: null,
   };
 
-  async checkWiFiConnection(): Promise<boolean> {
+  async scanForCameras(): Promise<WiFiNetwork[]> {
+    return scanForRicohCameras();
+  }
+
+  async connectToCamera(ssid: string, password?: string): Promise<CameraConnection> {
+    const success = await connectToCamera(ssid, password);
+
+    if (success) {
+      // Verify camera HTTP endpoint is reachable
+      const httpAvailable = await this.checkHTTPConnection();
+
+      if (httpAvailable) {
+        this.connection = {
+          isConnected: true,
+          method: "wifi",
+          cameraName: ssid,
+          ipAddress: RICOH_DEFAULT_IP,
+        };
+        return this.connection;
+      }
+    }
+
+    this.connection = {
+      isConnected: false,
+      method: null,
+      cameraName: null,
+    };
+
+    return this.connection;
+  }
+
+  private async checkHTTPConnection(): Promise<boolean> {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
@@ -27,31 +66,6 @@ class RicohGRService {
     }
   }
 
-  async connect(): Promise<CameraConnection> {
-    // Try WiFi first
-    const wifiAvailable = await this.checkWiFiConnection();
-
-    if (wifiAvailable) {
-      this.connection = {
-        isConnected: true,
-        method: "wifi",
-        cameraName: "RICOH GR III",
-        ipAddress: RICOH_DEFAULT_IP,
-      };
-      return this.connection;
-    }
-
-    // Bluetooth fallback would go here
-    // For now, return disconnected
-    this.connection = {
-      isConnected: false,
-      method: null,
-      cameraName: null,
-    };
-
-    return this.connection;
-  }
-
   async getLibrary(): Promise<MediaItem[]> {
     if (!this.connection.isConnected) {
       throw new Error("Not connected to camera");
@@ -59,8 +73,6 @@ class RicohGRService {
 
     // In production, this would hit the actual Ricoh API
     // GET http://192.168.0.1/library or similar
-    
-    // For now, return mock data for UI development
     return this.getMockLibrary();
   }
 
@@ -78,7 +90,6 @@ class RicohGRService {
 
   async downloadFile(item: MediaItem): Promise<string> {
     // In production: download from camera via HTTP
-    // For now, simulate download delay
     await new Promise((resolve) => setTimeout(resolve, 500));
     return item.fullUrl;
   }
@@ -87,7 +98,12 @@ class RicohGRService {
     return this.connection;
   }
 
+  async getCurrentNetwork(): Promise<string | null> {
+    return getCurrentSSID();
+  }
+
   disconnect(): void {
+    disconnectFromCamera();
     this.connection = {
       isConnected: false,
       method: null,
