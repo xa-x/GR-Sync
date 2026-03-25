@@ -10,6 +10,7 @@ import {
 import { useCameraContext } from "@/context/CameraContext";
 import { WiFiNetwork } from "@/types";
 import { useRouter } from "expo-router";
+import { IS_SIMULATOR } from "@/lib/wifi/service";
 
 export default function ConnectScreen() {
   const router = useRouter();
@@ -118,6 +119,18 @@ export default function ConnectScreen() {
           Connect to your Ricoh GR camera{"\n"}to sync photos and videos
         </Text>
       </View>
+
+      {/* Simulator warning */}
+      {IS_SIMULATOR && (
+        <View className="bg-yellow-500/20 px-4 py-3 rounded-xl mb-4">
+          <Text className="text-yellow-400 text-center text-sm font-medium">
+            ⚠️ Simulator Detected
+          </Text>
+          <Text className="text-yellow-400/70 text-center text-xs mt-1">
+            WiFi operations require a physical device. The simulator has no WiFi hardware.
+          </Text>
+        </View>
+      )}
 
       {/* Error */}
       {error && (

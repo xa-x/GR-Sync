@@ -1,4 +1,4 @@
-import { Platform, PermissionsAndroid } from "react-native";
+import { Platform, PermissionsAndroid, NativeModules } from "react-native";
 import WifiManager from "react-native-wifi-reborn";
 import * as Location from "expo-location";
 
@@ -16,6 +16,25 @@ function isRicohGR(ssid: string): boolean {
     ssid.toUpperCase().includes(prefix.toUpperCase())
   );
 }
+
+function isSimulator(): boolean {
+  if (Platform.OS === "ios") {
+    return !("isHardware" in NativeModules.DeviceInfo &&
+      NativeModules.DeviceInfo.isHardware);
+  }
+  if (Platform.OS === "android") {
+    return (
+      Platform.constants?.Fingerprint?.includes("generic") ||
+      Platform.constants?.Model?.includes("sdk_gphone") ||
+      false
+    );
+  }
+  return false;
+}
+
+const IS_SIMULATOR = isSimulator();
+
+export { IS_SIMULATOR };
 
 async function requestPermissions(): Promise<boolean> {
   if (Platform.OS === "android") {
@@ -38,6 +57,7 @@ async function requestPermissions(): Promise<boolean> {
 }
 
 export async function getCurrentSSID(): Promise<string | null> {
+  if (IS_SIMULATOR) return null;
   try {
     const ssid = await WifiManager.getCurrentWifiSSID();
     return ssid;
@@ -47,6 +67,11 @@ export async function getCurrentSSID(): Promise<string | null> {
 }
 
 export async function scanForRicohCameras(): Promise<WiFiNetwork[]> {
+  if (IS_SIMULATOR) {
+    console.warn("WiFi scanning not available on simulator. Use a physical device.");
+    return [];
+  }
+
   const hasPermission = await requestPermissions();
   if (!hasPermission) {
     throw new Error("Location permission required to scan for cameras");
@@ -93,6 +118,11 @@ export async function connectToCamera(
   ssid: string,
   password?: string
 ): Promise<boolean> {
+  if (IS_SIMULATOR) {
+    console.warn("WiFi connection not available on simulator. Use a physical device.");
+    return false;
+  }
+
   try {
     const isWep = false;
     const isHidden = false;
