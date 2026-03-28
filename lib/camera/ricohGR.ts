@@ -4,6 +4,8 @@ import {
   scanForRicohCameras,
   connectToCamera,
   disconnectFromCamera,
+  probeCameraAtIP,
+  RICOH_CAMERA_IP,
   WiFiNetwork,
 } from "../wifi/service";
 
@@ -49,21 +51,31 @@ class RicohGRService {
     return this.connection;
   }
 
-  private async checkHTTPConnection(): Promise<boolean> {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
+  async connectByIP(): Promise<CameraConnection> {
+    const httpAvailable = await this.checkHTTPConnection();
 
-      const response = await fetch(`http://${RICOH_DEFAULT_IP}/`, {
-        method: "HEAD",
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-      return response.ok;
-    } catch {
-      return false;
+    if (httpAvailable) {
+      const currentSsid = await getCurrentSSID();
+      this.connection = {
+        isConnected: true,
+        method: "wifi",
+        cameraName: currentSsid || `Ricoh GR (${RICOH_DEFAULT_IP})`,
+        ipAddress: RICOH_DEFAULT_IP,
+      };
+      return this.connection;
     }
+
+    this.connection = {
+      isConnected: false,
+      method: null,
+      cameraName: null,
+    };
+
+    return this.connection;
+  }
+
+  private async checkHTTPConnection(): Promise<boolean> {
+    return probeCameraAtIP(RICOH_CAMERA_IP);
   }
 
   async getLibrary(): Promise<MediaItem[]> {

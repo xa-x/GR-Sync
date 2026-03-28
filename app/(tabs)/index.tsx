@@ -20,6 +20,7 @@ export default function ConnectScreen() {
     error,
     scanForCameras,
     connectToSSID,
+    connectByIP,
     disconnect,
     availableCameras,
   } = useCameraContext();
@@ -215,6 +216,19 @@ export default function ConnectScreen() {
         >
           <Text className="text-white text-center font-medium">
             {scanning ? "Scanning..." : "Scan Again"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={connectByIP}
+          disabled={loading}
+          className="bg-white/5 border border-white/10 py-3 rounded-xl mb-3"
+        >
+          <Text className="text-white text-center font-medium">
+            Connect via Camera IP
+          </Text>
+          <Text className="text-white/40 text-center text-xs mt-0.5">
+            Use if already on camera WiFi
           </Text>
         </TouchableOpacity>
 

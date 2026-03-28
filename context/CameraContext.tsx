@@ -16,6 +16,7 @@ interface CameraContextType {
   error: string | null;
   connect: () => Promise<void>;
   connectToSSID: (ssid: string, password?: string) => Promise<void>;
+  connectByIP: () => Promise<void>;
   disconnect: () => void;
   loadLibrary: () => Promise<void>;
   scanForCameras: () => Promise<WiFiNetwork[]>;
@@ -107,6 +108,23 @@ export function CameraProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const connectByIP = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const conn = await ricohGR.connectByIP();
+      setConnection(conn);
+
+      if (!conn.isConnected) {
+        setError("Could not reach camera at 192.168.0.1. Make sure you're connected to the camera's WiFi.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Connection failed");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const disconnect = useCallback(() => {
     ricohGR.disconnect();
     setConnection(ricohGR.getConnection());
@@ -176,6 +194,7 @@ export function CameraProvider({ children }: { children: ReactNode }) {
         error,
         connect,
         connectToSSID,
+        connectByIP,
         disconnect,
         loadLibrary,
         scanForCameras,

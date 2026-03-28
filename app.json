@@ -17,12 +17,15 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "GR Sync needs access to save imported photos to your library.",
         "NSBluetoothAlwaysUsageDescription": "GR Sync uses Bluetooth to connect to your Ricoh GR camera.",
-        "NSLocalNetworkUsageDescription": "GR Sync needs access to the local network to connect to your Ricoh GR camera."
+        "NSLocalNetworkUsageDescription": "GR Sync needs access to the local network to connect to your Ricoh GR camera.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
       },
       "entitlements": {
         "com.apple.developer.networking.wifi-info": true
       },
-      "bundleIdentifier": "com.eng.abdullah.gr-sync"
+      "bundleIdentifier": "bl.abdullah.gr-sync"
     },
     "android": {
       "adaptiveIcon": {
